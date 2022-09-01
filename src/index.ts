@@ -1,24 +1,24 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
+import * as core from "@actions/core";
+import { getOctokit } from "@actions/github";
 
 const main = async () => {
   try {
     /**
      * Getting all provided variables we want to use in our program
      **/
-    const owner = core.getInput('owner', { required: true });
-    const repo = core.getInput('repo', { required: true });
-    const pr_number = core.getInput('pr_number', { required: true });
-    const token = core.getInput('token', { required: true });
+    const owner = core.getInput("owner", { required: true });
+    const repo = core.getInput("repo", { required: true });
+    const pr_number = Number(core.getInput("pr_number", { required: true }));
+    const token = core.getInput("token", { required: true });
 
     /**
-     * Creating instance of Octokit. This will let us to call the 
+     * Creating instance of Octokit. This will let us to call the
      * GitHub's REST API endpoints
-     * 
+     *
      * You can find all the information about how to use Octokit here:
      * https://octokit.github.io/rest.js/v18
      **/
-    const octokit = new github.getOctokit(token);
+    const octokit = getOctokit(token);
 
     /**
      * We need to fetch the list of files that were changes in the Pull Request
@@ -40,7 +40,7 @@ const main = async () => {
     let diffData = {
       additions: 0,
       deletions: 0,
-      changes: 0
+      changes: 0,
     };
 
     // Reference for how to use Array.reduce():
@@ -53,21 +53,21 @@ const main = async () => {
     }, diffData);
 
     /**
-     * Loop over all the files changed in the PR and add labels according 
+     * Loop over all the files changed in the PR and add labels according
      * to files types.
      **/
     for (const file of changedFiles) {
       /**
        * Add labels according to file types.
        */
-      const fileExtension = file.filename.split('.').pop();
+      const fileExtension = file.filename.split(".").pop() || "";
 
-      const fileTypeLabelMap = {
-        md: 'markdown',
-        js: 'javascript',
-        yml: 'yaml',
-        yaml: 'yaml',
-      }
+      const fileTypeLabelMap: { [key: string]: string | undefined } = {
+        md: "markdown",
+        js: "javascript",
+        yml: "yaml",
+        yaml: "yaml",
+      };
 
       const tagToAdd = fileTypeLabelMap[fileExtension];
 
@@ -93,12 +93,12 @@ const main = async () => {
         - ${diffData.changes} changes \n
         - ${diffData.additions} additions \n
         - ${diffData.deletions} deletions \n
-      `
+      `,
     });
-  } catch (error) {
+  } catch (error: any) {
     core.setFailed(error.message);
   }
-}
+};
 
 // Call the main function to run the action
 main();

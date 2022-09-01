@@ -9487,6 +9487,142 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 6144:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const github_1 = __nccwpck_require__(5438);
+const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        /**
+         * Getting all provided variables we want to use in our program
+         **/
+        const owner = core.getInput("owner", { required: true });
+        const repo = core.getInput("repo", { required: true });
+        const pr_number = Number(core.getInput("pr_number", { required: true }));
+        const token = core.getInput("token", { required: true });
+        /**
+         * Creating instance of Octokit. This will let us to call the
+         * GitHub's REST API endpoints
+         *
+         * You can find all the information about how to use Octokit here:
+         * https://octokit.github.io/rest.js/v18
+         **/
+        const octokit = (0, github_1.getOctokit)(token);
+        /**
+         * We need to fetch the list of files that were changes in the Pull Request
+         * and store them in a variable.
+         * We use octokit.paginate() to automatically loop over all the pages of the
+         * results.
+         * Reference: https://octokit.github.io/rest.js/v18#pulls-list-files
+         */
+        const { data: changedFiles } = yield octokit.rest.pulls.listFiles({
+            owner,
+            repo,
+            pull_number: pr_number,
+        });
+        /**
+         * Contains the sum of all the additions, deletions, and changes
+         * in all the files in the Pull Request.
+         **/
+        let diffData = {
+            additions: 0,
+            deletions: 0,
+            changes: 0,
+        };
+        // Reference for how to use Array.reduce():
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
+        diffData = changedFiles.reduce((acc, file) => {
+            acc.additions += file.additions;
+            acc.deletions += file.deletions;
+            acc.changes += file.changes;
+            return acc;
+        }, diffData);
+        /**
+         * Loop over all the files changed in the PR and add labels according
+         * to files types.
+         **/
+        for (const file of changedFiles) {
+            /**
+             * Add labels according to file types.
+             */
+            const fileExtension = file.filename.split(".").pop() || "";
+            const fileTypeLabelMap = {
+                md: "markdown",
+                js: "javascript",
+                yml: "yaml",
+                yaml: "yaml",
+            };
+            const tagToAdd = fileTypeLabelMap[fileExtension];
+            if (tagToAdd)
+                yield octokit.rest.issues.addLabels({
+                    owner,
+                    repo,
+                    issue_number: pr_number,
+                    labels: [tagToAdd],
+                });
+        }
+        /**
+         * Create a comment on the PR with the information we compiled from the
+         * list of changed files.
+         */
+        yield octokit.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: pr_number,
+            body: `
+        Pull Request #${pr_number} has been updated with: \n
+        - ${diffData.changes} changes \n
+        - ${diffData.additions} additions \n
+        - ${diffData.deletions} deletions \n
+      `,
+        });
+    }
+    catch (error) {
+        core.setFailed(error.message);
+    }
+});
+// Call the main function to run the action
+main();
+
+
+/***/ }),
+
 /***/ 2877:
 /***/ ((module) => {
 
@@ -9661,116 +9797,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
-const core = __nccwpck_require__(2186);
-const github = __nccwpck_require__(5438);
-
-const main = async () => {
-  try {
-    /**
-     * Getting all provided variables we want to use in our program
-     **/
-    const owner = core.getInput('owner', { required: true });
-    const repo = core.getInput('repo', { required: true });
-    const pr_number = core.getInput('pr_number', { required: true });
-    const token = core.getInput('token', { required: true });
-
-    /**
-     * Creating instance of Octokit. This will let us to call the 
-     * GitHub's REST API endpoints
-     * 
-     * You can find all the information about how to use Octokit here:
-     * https://octokit.github.io/rest.js/v18
-     **/
-    const octokit = new github.getOctokit(token);
-
-    /**
-     * We need to fetch the list of files that were changes in the Pull Request
-     * and store them in a variable.
-     * We use octokit.paginate() to automatically loop over all the pages of the
-     * results.
-     * Reference: https://octokit.github.io/rest.js/v18#pulls-list-files
-     */
-    const { data: changedFiles } = await octokit.rest.pulls.listFiles({
-      owner,
-      repo,
-      pull_number: pr_number,
-    });
-
-    /**
-     * Contains the sum of all the additions, deletions, and changes
-     * in all the files in the Pull Request.
-     **/
-    let diffData = {
-      additions: 0,
-      deletions: 0,
-      changes: 0
-    };
-
-    // Reference for how to use Array.reduce():
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-    diffData = changedFiles.reduce((acc, file) => {
-      acc.additions += file.additions;
-      acc.deletions += file.deletions;
-      acc.changes += file.changes;
-      return acc;
-    }, diffData);
-
-    /**
-     * Loop over all the files changed in the PR and add labels according 
-     * to files types.
-     **/
-    for (const file of changedFiles) {
-      /**
-       * Add labels according to file types.
-       */
-      const fileExtension = file.filename.split('.').pop();
-
-      const fileTypeLabelMap = {
-        md: 'markdown',
-        js: 'javascript',
-        yml: 'yaml',
-        yaml: 'yaml',
-      }
-
-      const tagToAdd = fileTypeLabelMap[fileExtension];
-
-      if (tagToAdd)
-        await octokit.rest.issues.addLabels({
-          owner,
-          repo,
-          issue_number: pr_number,
-          labels: [tagToAdd],
-        });
-    }
-
-    /**
-     * Create a comment on the PR with the information we compiled from the
-     * list of changed files.
-     */
-    await octokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: pr_number,
-      body: `
-        Pull Request #${pr_number} has been updated with: \n
-        - ${diffData.changes} changes \n
-        - ${diffData.additions} additions \n
-        - ${diffData.deletions} deletions \n
-      `
-    });
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-// Call the main function to run the action
-main();
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(6144);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
